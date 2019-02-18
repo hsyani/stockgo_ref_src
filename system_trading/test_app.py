@@ -43,17 +43,16 @@ from kiwoom.constant import KiwoomServerCheckTimeError
 
 
 # load main UI object
-ui = uic.loadUiType(config_manager.MAIN_UI_PATH)[0]
 
 
 # main class
-class TopTrader(QMainWindow, ui):
+class TopTrader(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
 
         # Application Configuration
         # UI
-        self.setupUi(self)
+        # self.setupUi(self)
 
         # Font(ko)
         self.set_ko_font()
@@ -65,7 +64,7 @@ class TopTrader(QMainWindow, ui):
         self.dbm = DBM('TopTrader')
 
         # Slack
-        self.slack = Slacker(config_manager.get_slack_token())
+        self.slack = Slacker("None")
 
         # Kiwoom
         self.kw = Kiwoom()
@@ -86,9 +85,9 @@ class TopTrader(QMainWindow, ui):
         # 그래프에서 마이너스 폰트 깨지는 문제에 대한 대처
         mpl.rcParams['axes.unicode_minus'] = False
 
-        path = 'c:/Windows/Fonts/D2Coding-Ver1.3-20171129.ttc'
-        font_name = fm.FontProperties(fname=path).get_name()
-        plt.rcParams["font.family"] = font_name
+        # path = 'c:/Windows/Fonts/D2Coding-Ver1.3-20171129.ttc'
+        # font_name = fm.FontProperties(fname=path).get_name()
+        # plt.rcParams["font.family"] = font_name
 
     def main(self):
         print("Start Application")

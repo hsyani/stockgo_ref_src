@@ -164,12 +164,13 @@ class DBM():
         y, m, d = date.year, date.month, date.day
         s_date = datetime(y, m, d, 9, 0, 0)
         e_date = datetime(y, m, d, 15, 30, 0)
-
+        print("1")
         # need to fix (condi_name -> condi_index)
         # query = {'date': {'$gte': s_date, '$lte': e_date}, 'event': 'I', 'condi_index': condi_index}
         query = {'date': {'$gte': s_date, '$lte': e_date}, 'event': 'I', 'condi_name': condi_name}
         cur = self.db.real_condi_search.find(query)\
             .sort('date', pymongo.ASCENDING)
+        print(list(cur))
         if cur.count() == 0:
             return []
         return list(cur)

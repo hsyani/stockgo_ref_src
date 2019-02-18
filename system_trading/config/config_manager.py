@@ -23,6 +23,7 @@ MODE = ""
 def get_slack_token():
     global SLACK_TOKEN
     mongo = MongoClient()
+    print(mongo)
     SLACK_TOKEN = mongo.TopTrader.config.find({}).next()["slack_token"]
     return SLACK_TOKEN
 
