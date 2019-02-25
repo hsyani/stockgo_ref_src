@@ -35,17 +35,17 @@ from collections import defaultdict
 from kiwoom.constant import KiwoomServerCheckTimeError
 import multiprocessing
 
-TARGETCOND = "52주"
-TARGETCONDID = "004"
+TARGETCOND = "52주2"
+TARGETCONDID = "005"
 
 # main class
-class TopTrader(QMainWindow):
+class RTHogaCollector(QMainWindow):
     def __init__(self):
         super().__init__()
         # self.setupUi(self)  # load app screen
         self.logger = TTlog(logger_name="RT_HogaCollect").logger
         self.mongo = MongoClient()
-        self.tt_db = self.mongo.TopTrader
+        self.rthc_db = self.mongo.RTHogaCollector
         self.slack = Slack("none")
         self.kw = Kiwoom()
         self.login()
@@ -60,17 +60,19 @@ class TopTrader(QMainWindow):
         self.start_timer()
 
         # core function
-        self.screen_no = 4000
+        self.screen_no = 4001
         self.N1, self.N2 = 0, 10
 
-        # self.screen_no = 4001
-        # self.N1, self.N2 = 10, 20
-
         self.real_condi_search()
-        self.dbm = DBM('TopTrader')
-        df = pd.DataFrame(self.dbm.get_real_condi_search_data(t, TARGETCOND))
+        #self.realtime_stream_hoga_from_codelist()
 
-        print(df)
+        # mongoDB 로 저장한 Collector 에 대해서 DBM 으로 처리 하는 부분
+        # self.dbm = DBM('RTHogaCollector')
+        # df = pd.DataFrame(self.dbm.get_real_condi_search_data(t, TARGETCOND))
+
+        # sys.exit()
+
+
 
     def login(self):
         err_code = self.kw.login()
@@ -81,7 +83,7 @@ class TopTrader(QMainWindow):
 
     def load_stock_info(self):
         self.stock_dict = {}
-        doc = self.tt_db.stock_information.find({})
+        doc = self.rthc_db.stock_information.find({})
         for d in doc:
             code = d["code"]
             self.stock_dict[code] = d
@@ -90,7 +92,7 @@ class TopTrader(QMainWindow):
     def start_timer(self):
         if self.timer:
             self.timer.stop()
-            self.timer.deleteLater()
+            self.timer.deletezzLater()
         self.timer = QTimer()
         self.timer.timeout.connect(self.fake_check_to_sell)
         # self.timer.setSingleShot(True)
@@ -117,7 +119,7 @@ class TopTrader(QMainWindow):
             return
 
         # 실시간 조건검색 이력정보
-        self.tt_db.real_condi_search.insert({
+        self.rthc_db.real_condi_search.insert({
             'date': curr_time,
             'code': event_data["code"],
             'stock_name': self.stock_dict[event_data["code"]]["stock_name"],
@@ -127,35 +129,52 @@ class TopTrader(QMainWindow):
             'condi_name': event_data["condi_name"]
         })
 
+    def realtime_stream_callback(self, data):
+        curr_time = datetime.today()
+
+        if curr_time < self.s_time:
+            self.logger.info("=" * 100)
+            self.logger.info("장 Open 전 입니다. 오전 9:00 이후에 검색 시작합니다.")
+            self.logger.info("=" * 100)
+            #return
+
+        self.logger.info("[realtime_stream_callback]")
+        self.logger.info("data: {}".format(data))
+        self.rthc_db.rt_hoga_from_codelist.insert({
+                        'date': curr_time,
+                        'real_data': data})
+
+    def rt_hoga_collector(self, data):
+        screen_no = "6001"
+        self.kw.reg_callback("OnReceiveRealData", "", self.realtime_stream_callback)
+        print(data["code"])
+        # [15] = 거래량 / [10] = 현재가 / [11] = 전일대비 / [12] = 등락율 / [228] = 체결강도 / [30] = 전일거래량대비(비율) / [31] = 거래회전율 / [12] = 등락율
+        # 호가시간 / 매도호가 / 매도호가수량 / 매도호가직전대비 / 매수호가 / 매수호가수량
+        # set_real_reg 등록시 마지막 파라미터를 1 로 설정하면 마지막에 추가된 종목만 추가되면서 수행됨
+        self.kw.set_real_reg(screen_no, data["code"], "15;10;11;12;228;30;31;12", 1)
+        # self.kw.set_real_reg(screen_no, data["code"], "15;10;11;12;228;30;31;12;21;
+        #       50;49;48;47;46;45;44;43;42;41;70;69;68;67;66;65;64;63;62;61;90;89;88;87;86;85;84;83;82;81;
+        #       51;52;53;54;55;56;57;58;59;60;71;72;73;74;75;76;77;78;79;80;91;92;93;94;95;96;97;98;99;100;
+        #       121;122;125;126;128;129;138;139;13", 1)
+
     def real_condi_search(self):
-        # callback fn 등록
-        self.kw.reg_callback("OnReceiveRealCondition", "", self.search_result)
-        # self.kw.notify_callback["OnReceiveRealCondition"] = self.search_condi
-
-        condi_info = self.kw.get_condition_load()
         self.logger.info("실시간 조건 검색 시작합니다.")
-        #for condi_name, condi_id in list(condi_info.items())[self.N1:self.N2]:
-        #    # 화면번호, 조건식이름, 조건식ID, 실시간조건검색(1)
-        #    self.logger.info("화면번호: {}, 조건식명: {}, 조건식ID: {}".format(
-        #        self.screen_no, condi_name, condi_id
-        #    ))
-        #    self.kw.send_condition(str(self.screen_no), condi_name, int(condi_id), 1)
-        #    조건식의 종목 가져오기
-        #    time.sleep(0.5)
-        condi_name =  TARGETCOND
-        condi_id = TARGETCONDID
-        self.logger.info("화면번호: {}, 조건식명: {}, 조건식ID: {}".format(
-            self.screen_no, condi_name, condi_id
-        ))
-        tmp = self.kw.send_condition(str(self.screen_no), condi_name, int(condi_id), 1)
-        print(tmp)
-        time.sleep(0.5)
-
+        # callback fn 등록
+        self.kw.reg_callback("OnReceiveRealCondition", "", self.rt_hoga_collector)
+        condi_info = self.kw.get_condition_load()
+        #condi_info = {'노네임' : '003', '52주2' : '005'}
+        condi_info = {'52주2' : '005'}
+        for condi_name, condi_id in list(condi_info.items())[self.N1:self.N2]:
+            # 화면번호, 조건식이름, 조건식ID, 실시간조건검색(1)
+            self.logger.info("화면번호: {}, 조건식명: {}, 조건식ID: {}".format(
+                self.screen_no, condi_name, condi_id
+            ))
+            self.kw.send_condition(str(self.screen_no), condi_name, int(condi_id), 1)
+            time.sleep(0.5)
 
 
 # Print Exception Setting
 sys._excepthook = sys.excepthook
-
 
 def exception_hook(exctype, value, traceback):
     sys._excepthook(exctype, value, traceback)
@@ -167,6 +186,6 @@ sys.excepthook = exception_hook
 if __name__ == "__main__":
     global app
     app = QApplication(sys.argv)
-    tt = TopTrader()
-    #tt.show()
+    rthc = RTHogaCollector()
+    rthc.show()
     sys.exit(app.exec_())
