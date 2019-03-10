@@ -1,7 +1,9 @@
 import logging
 import logging.handlers
 from singleton_decorator import singleton
-
+import util.constant
+from pathlib import Path
+import os
 
 @singleton
 class KWlog():
@@ -12,8 +14,11 @@ class KWlog():
             format(self.logger_name)
         formatter = logging.Formatter(format)
         file_max_byte = 1024 * 1024 * 10  # 10MB
-        # log_path = "D:/work/TopTrader_log/{}.log".format(self.logger_name)
-        log_path = "D:/workplace/system_trading/log/{}.log".format(self.logger_name)
+
+        if not(Path(util.constant.PROJECT_PATH_LOG).exists()):
+            os.mkdir(util.constant.PROJECT_PATH_LOG)
+        log_path = str(util.constant.PROJECT_PATH_LOG) + "\\{}.log".format(self.logger_name)
+
         file_handler = logging.handlers.RotatingFileHandler(log_path, maxBytes=file_max_byte, backupCount=1000)
         stream_handler = logging.StreamHandler()
         file_handler.setFormatter(formatter)

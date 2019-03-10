@@ -1,4 +1,9 @@
+import os
+from pathlib import Path
 
+PROJECT_PATH = Path(os.path.abspath(__file__)).parents[1] # get project path
+PROJECT_PATH_LOG = PROJECT_PATH / 'log' # set variable of log folder
+os.chdir(PROJECT_PATH)  # change current working directory to the project folder
 
 KOSPI = "0"
 KOSDAQ = "10"
