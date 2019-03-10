@@ -1,0 +1,31 @@
+Data collector
+'Data collector'의 목적은 조건검색식의 결과를 DB에 저장하고 지수를 저장하는 것이다.
+'Data collector'은 '52주 신고가에 대한 변경내용'을 실시간으로 detect 한다.
+'Data collector'은 '52주 신고가에 대한 변경내용'이 발생하면 종목을 가져온다.
+'Data collector'은 DB('DB_CodeList_YYYY-MM-DD')에 종목을 저장한다. 이 때 저장하는 내용은 'detect된 시간' 과 '종목번호' 등의 정보
+'Data collector'는 'Hoga collector'와 'Che collector'에게 '종목번호' 를 줘서 DB에 저장하도록 시킨다.
+'Data collector'는 장 중에만 실행된다.
+'Data collector'는 'KOSPI'와 'KOSDAQ'에 대한 지수를 초봉으로 DB('DB_MarketIndex')에 기록한다.
+
+Hoga collector
+'Hoga collector'의 목적은 호가 정보를 DB에 저장하는 것이다.
+'Hoga collector'는 주어진 '종목번호'를 가지고 해당 종목의 호가정보를 DB('DB_Hoga_종목번호_YYYY-MM-DD')에 저장한다. 이 때 DB 의 Collection 이름은 '종목번호'가 꼭 들어가도록 지정한다.
+'Hoga collector'는 처음에 받아온 '현재가'를 기록한다.
+'Hoga collector'는 '현재가' 보다 -3% 됐을 때, 또는 장 끝났을 때 DB 저장을 멈춘다.
+
+Che collector
+'Che collector'의 목적은 체결정보를 DB에 저장하는 것이다.
+'Che collector'는 주어진 '종목번호'를 가지고 해당 종목의 체결정보를 DB('DB_Che_종목번호_YYYY-MM-DD')에 저장한다. 이 때 DB 의 Collection 이름은 '종목번호'가 꼭 들어가도록 지정한다.
+'Che collector'는 처음에 받아온 '현재가'를 기록한다.
+'Che collector'는 '현재가' 보다 -3% 됐을 때, 또는 장 끝났을 때 DB 저장을 멈춘다.
+
+Model maker
+'Model maker'의 목적은 Keras를 이용하여 RL 하여 모델('StockgoModel')을 만드는 것이다.
+'Model maker'는 'DB_CodeList_YYYY-MM-DD'를 참조하여 '종목번호'를 가져온다.
+'Model maker'는 'DB_Hoga_종목번호_YYYY-MM-DD'를 query 하여 1초 data로 가공하여 'Hoga_array'에 저장한다.
+'Model maker'는 'DB_Che_종목번호_YYYY-MM-DD'를 query 하여 1초 data로 가공하여 'Che_array'에 저장한다.
+'Model maker'는 앞에서 가공한 'Hoga_array', 'Che_array', 'DB_MarketIndex'를 이용하여 학습한다.
+
+StockTrader
+'StockTrader'의 목적은 'Model maker'를 통해서 만들어진 모델을 통해 직접 거래하는 것이다.
+'StockTrader'는 거래에 대한 reward 를 통해서 'StockgoModel'를 개선한다.
