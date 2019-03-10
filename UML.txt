@@ -1,0 +1,181 @@
+@startuml
+
+class TrManager {
+    set_fidlist_n_mask()
+    init_tr_ret_data()
+    _on_receive_tr_data(screen_no, rqname, trcode, record_name, next, _1, _2, _3, _4)
+}
+
+class TrController {
+    queue_size = 1000
+    queue = deque
+    now = datetime.now
+    req_limit_setting = []
+    prevent_excessive_request(self):
+}
+
+class KWlog {
+    logger_name
+    logger
+}
+
+class DBM {
+    __init__(self, dbname, host=None, port=None):
+    get_unique_data(self, col, query=None):
+    get_time_series_collection(self, time_unit):
+    check_tick_cache(self, code, date, tick="1"):
+    save_force(self, col, data, search_condition):
+    get_tick_data(self, code, date, tick="1"):
+    save_tick_data(self, data, tick="1"):
+    get_code_list_of_rcs(self, s_date, e_date):
+    get_code_list_condi_search_result(self, date):
+    get_condi_result(self, s_date, e_date):
+    code_list_by_condi_id(self, condi_index, date):
+    already_collect_tick_data(self, code, date, tick="1"):
+    save_collect_tick_data_history(self, code, date, tick="1"):
+    record_collect_tick_data_status(self, status, date, tick="1"):
+    get_collect_tick_data_status(self, date, tick="1"):
+    get_real_condi_search_data(self, date, condi_name):
+    mongo = MongoClient
+    db = get_database
+    col_table = {}
+    logger = TTlog
+}
+
+class MongoClient
+class QMainWindow
+class logging
+class Kiwoom
+
+DBM --> MongoClient
+
+TopTrader --|> QMainWindow
+TopTrader --> Kiwoom
+TopTrader --> MongoClient
+TopTrader --> TTlog
+
+class TopTrader {
+    __init__(self):
+    logger = TTlog().logger
+    mongo = MongoClient
+    tt_db = self.mongo.TopTrader
+    kw = Kiwoom
+    init_trading(self):
+    login(self):
+    load_stock_info(self):
+    update_stock_info(self):
+    set_account(self):
+    start_timer(self):
+    just_sell_all_stocks(self):
+    check_stocks_to_sell(self):
+    get_account_info(self, acc_no):
+    search_condi(self, event_data):
+    auto_trading(self):
+    my_stock_pocket
+    s_time
+}
+
+class TTlog {
+    __init__(self, logger_name="TT"):
+    logger = logging
+}
+
+class Chejan {
+    fid_table = {}
+    __init__(self, kw):
+    make_data(self, gubun, item_cnt, fid_list):
+    kw = kw
+    gubun
+}
+
+Kiwoom --> Chejan
+Kiwoom --> TrManager
+Kiwoom --> TrController
+Kiwoom --> KWlog
+Kiwoom --|> QAxWidget
+
+class Kiwoom {
+    logger = KWlog().logger
+    tr_mgr = TrManager
+    chejan = Chejan
+    evt_loop = QEventLoop
+    ret_data = None
+    req_queue = deque
+    tr_controller = TrController
+    acc_no = ""
+    event_callback_fn = {}
+    _create_kiwoom_instance(self):
+    _set_signal_slots(self):
+    _on_event_connect(self, err_code):
+    _on_receive_real_data(self, code, real_type, real_data):
+    _on_receive_real_condition(self, code, event_type, condi_name, condi_index):
+    _on_receive_tr_condition(self, screen_no, code_list, condi_name, condi_index, next):
+    _on_receive_condition_ver(self, ret_code, condition_text):
+    _on_receive_chejan_data(self, gubun, item_cnt, fid_list):
+    _on_receive_msg(self, screen_no, rqname, trcode, msg):
+    _comm_connect(self):
+    avoid_server_check_time(f):
+    login(self):
+    get_connect_state(self):
+    get_chejan_data(self, fid):
+    get_server_gubun(self):
+    is_valid_market(self, market):
+    get_stock_basic_info(self, market=[constant.KOSPI, constant.KOSDAQ]):
+    get_master_stock_name(self, code):
+    get_theme_group_list(self, n_type):
+    get_theme_group_code_list(self, theme_code):
+    get_code_list_by_market(self, market):
+    get_branch_code_name(self):
+    get_condition_load(self):
+    get_condition_name_list(self):
+    get_stock_infos(self, code_list, screen_no, type_flag, next):
+    send_condition(self, screen_no: str, condi_name: str, condi_index: int, search_type: int):
+    send_condition_stop(self, screen_no, condi_name, condi_index):
+    get_per_info(self, per_condi):
+    get_basic_info(self, code, screen_no):
+    get_chegyul_info(self, code, screen_no):
+    get_hoga_info(self, code, screen_no):
+    rapidly_rising_price_stock(self, market, time_gubun, time, vol_gubun, screen_no):
+    rapidly_swing_price_stock_detail(self, market, swing_gubun, time_gubun, time, vol_gubun, stock_condi, credit_condi, price_condi, updown_limit, screen_no):
+    stock_price_by_tick(self, code: str, tick: str, screen_no: str, start_date: datetime = None, end_date: datetime = None, date: datetime = None):
+    stock_price_by_min(self, code: str, tick: str, screen_no: str, start_date: datetime, end_date: datetime):
+    stock_price_by_day(self, code: str, screen_no: str, start_date: datetime, end_date: datetime):
+    stock_price_by_week(self, code: str, screen_no: str, start_date: datetime, end_date: datetime):
+    stock_price_by_month(self, code: str, screen_no: str, start_date: datetime, end_date: datetime):
+    job_categ_price(self, market, code, screen_no):
+    job_categ_index(self, code: str, screen_no: str):
+    계좌수익률요청(self, rqname, account_no, screen_no):
+    당일실현손익상세요청(self, rqname, account_no, account_pw, code, screen_no):
+    계좌평가현황요청(self, rqname, account_no, account_pw, gubun, screen_no):
+    계좌평가잔고내역요청(self, rqname, account_no, account_pw, gubun, screen_no):
+    get_master_listed_stock_cnt(self, code):
+    get_master_construction(self, code):
+    get_master_listed_stock_date(self, code):
+    get_master_last_price(self, code):
+    get_master_stock_state(self, code):
+    get_login_info(self, tag):
+    set_real_reg(self, screen_no, codes, fids, reg_type):
+    set_real_remove(self, screen_no, code):
+    set_account(self, acc_no):
+    시장가_신규매수(self, code, quantity):
+    지정가_신규매수(self, code, quantity, price):
+    매수취소(self, code, quantity):
+    시장가_신규매도(self, code, quantity):
+    지정가_신규매도(self, code, quantity, price):
+    매도취소(self, code, quantity):
+    send_order(self, rqname, screen_no, acc_no, order_type, code, quantity, price, hoga_gubun, orig_order_no):
+    get_api_module_path(self):
+    reg_callback(self, event, key, fn):
+    notify_callback(self, event, data, key=None):
+    get_curr_price(self, code):
+    _get_comm_real_data(self, code, fid):
+    _get_comm_data_ex(self, trcode, output_name):
+    _set_input_values(self, args):
+    _set_input_value(self, id, value):
+    _comm_rq_data(self, rqname, trcode, next, screen_no):
+    _comm_kw_rq_data(self, rqname, code_list, screen_no, type_flag, next):
+    _get_repeat_cnt(self, trcode, rqname):
+    _get_comm_data(self, trcode, field_name, index, item_name):
+}
+
+@enduml
