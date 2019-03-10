@@ -156,17 +156,28 @@ class CondiCollector(QMainWindow):
         self.kw.reg_callback("OnReceiveRealCondition", "", self.rt_hoga_collector)
         condi_info = self.kw.get_condition_load()
 
-        # todo 동시에 multiple 조건식에 대한 수집이 가능한가?
+        condi_name = "52주1"
+        condi_id = condi_info[condi_name]
 
-        condi_info = {'노네임' : '003', '52주2' : '005'}
-        #condi_info = { targetcondname : targetcondid }
-        for condi_name, condi_id in list(condi_info.items())[self.N1:self.N2]:
-            # 화면번호, 조건식이름, 조건식ID, 실시간조건검색(1)
-            self.logger.info("화면번호: {}, 조건식명: {}, 조건식ID: {}".format(
-                self.screen_no, condi_name, condi_id
-            ))
-            self.kw.send_condition(str(self.screen_no), condi_name, int(condi_id), 1)
-            time.sleep(0.5)
+        # 화면번호, 조건식이름, 조건식ID, 실시간조건검색(1)
+        self.logger.info("화면번호: {}, 조건식명: {}, 조건식ID: {}".format(
+            self.screen_no, condi_name, condi_id
+        ))
+        code_list = self.kw.send_condition(str(self.screen_no), condi_name, int(condi_id), 1)
+        collection_name = condi_name + str(datetime.today().date())
+        try:
+            self.cc_db.create_collection(collection_name)
+            self.cc_db[collection_name].create_index("code", unique=True)   # set unique index by code number
+        except:
+            self.logger.info("colletion name requested is exist already")
+
+        for code in code_list:
+            try:
+                self.cc_db[collection_name].insert_one({"code": code})
+            except pymongo.errors.DuplicateKeyError:
+                self.logger.info("code already exist: {}".format(code))
+
+        time.sleep(0.5)
 
 
 # Print Exception Setting
