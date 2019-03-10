@@ -1,5 +1,7 @@
 @startuml
 
+'hide members
+
 class TrManager {
     set_fidlist_n_mask()
     init_tr_ret_data()
@@ -14,10 +16,15 @@ class TrController {
     prevent_excessive_request(self):
 }
 
+KWlog --> logging
+
 class KWlog {
     logger_name
     logger
 }
+
+
+DBM --> MongoClient
 
 class DBM {
     __init__(self, dbname, host=None, port=None):
@@ -47,8 +54,6 @@ class QMainWindow
 class logging
 class Kiwoom
 
-DBM --> MongoClient
-
 TopTrader --|> QMainWindow
 TopTrader --> Kiwoom
 TopTrader --> MongoClient
@@ -74,6 +79,8 @@ class TopTrader {
     my_stock_pocket
     s_time
 }
+
+TTlog --> logging
 
 class TTlog {
     __init__(self, logger_name="TT"):
@@ -176,6 +183,57 @@ class Kiwoom {
     _comm_kw_rq_data(self, rqname, code_list, screen_no, type_flag, next):
     _get_repeat_cnt(self, trcode, rqname):
     _get_comm_data(self, trcode, field_name, index, item_name):
+}
+/'
+package Stockgo_DB <<Database>> {
+    class Collection_CodeListByDate {
+        documents of code list like below
+        {detecteddate: 2019-03-08T09:14:05Z, code: "000020"}}
+        {detecteddate: 2019-03-07T10:39:09Z, code: "000030"}}
+    }
+    class Collection_BookedOrders_ofSomeCompany1 {
+        documents of hoga data 
+    }
+    class Collection_BookedOrders_ofSomeCompany2 {
+        documents of hoga data 
+    }
+    class Collection_SettlementVolume_ofSomeCompany1 {
+        documents of chegyullyang
+    }
+    class Collection_SettlementVolume_ofSomeCompany2 {
+        documents of chegyullyang
+    }
+}
+'/
+package DB_TopTrader <<Database>> {
+    class urgent {
+        type: error
+        error_code: 0
+    }
+    class time_series_temp {
+        type: duration
+        code: code
+        stock_name: stock_name
+        last: i
+        start_date: s_date
+        end_date: e_date
+        total: total
+    }
+}
+
+collect_stock_data --> collect_stock_data_time_unit : call
+
+class collect_stock_data {
+}
+
+collect_stock_data_time_unit --> DB_TopTrader : update
+collect_stock_data_time_unit --> Kiwoom
+
+class collect_stock_data_time_unit {
+    collect_n_save_data_min()
+    collect_n_save_data()
+    get_stock_list()
+    upsert_db()
 }
 
 @enduml
