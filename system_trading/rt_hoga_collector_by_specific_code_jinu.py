@@ -41,9 +41,9 @@ class CondiCollector(QMainWindow):
         # todo : 장시작시간에 대한 예외처리 (SetRealReg) 하여, 장 종료되면 자동종료
         super().__init__()
         # self.setupUi(self)  # load app screen
-        self.logger = TTlog(logger_name="RT_HogaCollect").logger
+        self.logger = TTlog(logger_name="RT_HogaCollect_byCode").logger
         self.mongo = MongoClient()
-        self.cc_db = self.mongo.RTHogaCollector
+        self.cc_db = self.mongo.RT_HogaCollect_byCode
         self.slack = Slack("none")
         self.kw = Kiwoom()
         self.login()
@@ -62,7 +62,8 @@ class CondiCollector(QMainWindow):
         self.screen_no = 4001
         self.N1, self.N2 = 0, 10
 
-        self.real_condi_search()
+        code = "061970"
+        self.rt_hoga_collector(code)
 
         #self.realtime_stream_hoga_from_codelist()
 
@@ -117,25 +118,11 @@ class CondiCollector(QMainWindow):
                        'date': curr_time,
                        'real_data': data})
 
-    def rt_hoga_collector(self, event_data):
+    def rt_hoga_collector(self, code):
         screen_no = "6001"
-        curr_time = datetime.today()
 
         self.logger.info("[rt_hoga_collector called]")
-        self.logger.info("data: {}".format(event_data))
 
-        # 실시간 조건 검색으로 들어온 종목정보에 대해 DB 저장
-        if event_data["event_type"] == "I":
-            self.logger.info("I data list saving")
-            self.cc_db.itemdectectrecord.insert({
-                'date': curr_time,
-                'code': event_data["code"],
-                #'stock_name': self.stock_dict[event_data["code"]]["stock_name"],
-                #'market': self.stock_dict[event_data["code"]]["market"],
-                'event': event_data["event_type"],
-                'condi_index': event_data["condi_index"],
-                'condi_name': event_data["condi_name"]
-            })
         # callback fn 등록
         self.kw.reg_callback("OnReceiveRealData", "", self.rt_hoga_collector_callback)
         # [15] = 거래량 / [10] = 현재가 / [11] = 전일대비 / [12] = 등락율 / [228] = 체결강도 / [30] = 전일거래량대비(비율) / [31] = 거래회전율 / [12] = 등락율
@@ -144,7 +131,7 @@ class CondiCollector(QMainWindow):
         # self.kw.set_real_reg(screen_no, data["code"], "21", 1)
         # self.kw.set_real_reg(screen_no, data["code"], "15;10;11;12;228;30;31;12", 1)
         # 60+9+9 개 fid
-        self.kw.set_real_reg(screen_no, event_data["code"], "15;10;11;12;228;30;31;12;21; \
+        self.kw.set_real_reg(screen_no, code, "15;10;11;12;228;30;31;12;21; \
                 50;49;48;47;46;45;44;43;42;41;70;69;68;67;66;65;64;63;62;61;90;89;88;87;86;85;84;83;82;81; \
                 51;52;53;54;55;56;57;58;59;60;71;72;73;74;75;76;77;78;79;80;91;92;93;94;95;96;97;98;99;100; \
                 121;122;125;126;128;129;138;139;13", 1)
