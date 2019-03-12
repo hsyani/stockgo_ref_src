@@ -103,7 +103,8 @@ class CondiCollector(QMainWindow):
         :return:
         """
 
-    def rt_hoga_collector_callback(self, data):
+    # 콜백 함수에 대한 콜백 함수 (3/6 검증 완료)
+    def rt_hoga_collector(self, item_data):
         curr_time = datetime.today()
         if curr_time < self.s_time:
             self.logger.info("=" * 100)
@@ -111,41 +112,53 @@ class CondiCollector(QMainWindow):
             self.logger.info("=" * 100)
             return
 
-        self.logger.info("[rt_hoga_collector_callback called]")
-        self.logger.info("data: {}".format(data))
-        self.cc_db[self.db_docname].insert({
-                       'date': curr_time,
-                       'real_data': data})
+        self.logger.info("[rt_hoga_collector called]")
+        self.logger.info("data: {}".format(item_data))
 
-    def rt_hoga_collector(self, event_data):
+        if item_data["real_type"] == "주식호가잔량":
+            tablename = item_data["code"] + "hoga"
+            self.cc_db[tablename].insert({
+                'real_data' : item_data["real_data"]
+            })
+        elif item_data["real_type"] == "주식체결":
+            tablename = item_data["code"] + "chegyul"
+            self.cc_db[tablename].insert({
+                'real_data': item_data["real_data"]
+            })
+        else:
+            print("당신은 누구십니까 : " + item_data["code"] + item_data["real_type"] + " : " + item_data["real_data"])
+
+        # self.cc_db[self.db_docname].insert({
+        #                'date': curr_time,
+        #                'real_data': item_data})
+
+    def rt_item_collector(self, cond_data):
         screen_no = "6001"
         curr_time = datetime.today()
 
-        self.logger.info("[rt_hoga_collector called]")
-        self.logger.info("data: {}".format(event_data))
+        self.logger.info("[rt_item_collector called]")
+        # self.logger.info("data: {}".format(event_data))
 
         # 실시간 조건 검색으로 들어온 종목정보에 대해 DB 저장
-        if event_data["event_type"] == "I":
-            self.logger.info("I data list saving")
+        if cond_data["event_type"] == "I":
             self.cc_db.itemdectectrecord.insert({
                 'date': curr_time,
-                'code': event_data["code"],
+                'code': cond_data["code"],
                 #'stock_name': self.stock_dict[event_data["code"]]["stock_name"],
                 #'market': self.stock_dict[event_data["code"]]["market"],
-                'event': event_data["event_type"],
-                'condi_index': event_data["condi_index"],
-                'condi_name': event_data["condi_name"]
+                'event': cond_data["event_type"],
+                'condi_index': cond_data["condi_index"],
+                'condi_name': cond_data["condi_name"]
             })
         # callback fn 등록
-        print('jack' + event_data)
-        self.kw.reg_callback("OnReceiveRealData", "", self.rt_hoga_collector_callback)
+        self.kw.reg_callback("OnReceiveRealData", "", self.rt_hoga_collector)
         # [15] = 거래량 / [10] = 현재가 / [11] = 전일대비 / [12] = 등락율 / [228] = 체결강도 / [30] = 전일거래량대비(비율) / [31] = 거래회전율 / [12] = 등락율
         # 호가시간 / 매도호가 / 매도호가수량 / 매도호가직전대비 / 매수호가 / 매수호가수량
         # set_real_reg 등록시 마지막 파라미터를 1 로 설정하면 마지막에 추가된 종목만 추가되면서 수행됨
         # self.kw.set_real_reg(screen_no, data["code"], "21", 1)
         # self.kw.set_real_reg(screen_no, data["code"], "15;10;11;12;228;30;31;12", 1)
         # 60+9+9 개 fid
-        self.kw.set_real_reg(screen_no, event_data["code"], "15;10;11;12;228;30;31;12;21; \
+        self.kw.set_real_reg(screen_no, cond_data["code"], "15;10;11;12;228;30;31;12;21; \
                 50;49;48;47;46;45;44;43;42;41;70;69;68;67;66;65;64;63;62;61;90;89;88;87;86;85;84;83;82;81; \
                 51;52;53;54;55;56;57;58;59;60;71;72;73;74;75;76;77;78;79;80;91;92;93;94;95;96;97;98;99;100; \
                 121;122;125;126;128;129;138;139;13", 1)
@@ -153,12 +166,10 @@ class CondiCollector(QMainWindow):
     def real_condi_search(self):
         self.logger.info("실시간 조건 검색 시작합니다.")
         # callback fn 등록
-        self.kw.reg_callback("OnReceiveRealCondition", "", self.rt_hoga_collector)
+        self.kw.reg_callback("OnReceiveRealCondition", "", self.rt_item_collector)
         condi_info = self.kw.get_condition_load()
 
-        # todo 동시에 multiple 조건식에 대한 수집이 가능한가?
-
-        condi_info = {'노네임' : '003', '52주2' : '005'}
+        #condi_info = {'노네임' : '003', '52주2' : '005'}
         #condi_info = { targetcondname : targetcondid }
         for condi_name, condi_id in list(condi_info.items())[self.N1:self.N2]:
             # 화면번호, 조건식이름, 조건식ID, 실시간조건검색(1)
