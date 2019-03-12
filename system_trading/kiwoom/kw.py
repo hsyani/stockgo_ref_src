@@ -89,10 +89,14 @@ class Kiwoom(QAxWidget):
         self.logger.info("real_type: {}".format(real_type))
         self.logger.info("real_data: {}".format(real_data))
 
+        data = [
+            ("code", code),
+            ("real_type", real_type),
+            ("real_data", real_data)
+        ]
         # callback
         self.logger.info("[OnReceiveRealData] Notify Callback methods..")
-        self.notify_callback('OnReceiveRealData', real_data)
-
+        self.notify_callback('OnReceiveRealData', dict(data))
 
         #
         # with open(real_type + ".txt", "a") as f:
@@ -125,7 +129,7 @@ class Kiwoom(QAxWidget):
             value = self._get_comm_real_data(code, fid)
             result.append(value)
             self.logger.info("Value: " + value)
-            
+
         return result
         """
 
@@ -320,6 +324,7 @@ class Kiwoom(QAxWidget):
         :param f:
         :return:
         """
+
         @wraps(f)
         def wrapper(*args, **kwargs):
             now = datetime.now()
@@ -683,7 +688,8 @@ class Kiwoom(QAxWidget):
 
     @avoid_server_check_time
     @common.type_check
-    def stock_price_by_tick(self, code: str, tick: str, screen_no: str, start_date: datetime = None, end_date: datetime = None, date: datetime = None):
+    def stock_price_by_tick(self, code: str, tick: str, screen_no: str, start_date: datetime = None,
+                            end_date: datetime = None, date: datetime = None):
         """특정 주식종목의 틱봉 데이터를 요청하는 함수. tr요청시 한번에 최대 600개까지만 return 가능.
         함수 호출시 start_date, end_date 쌍 또는 date 값 둘중 하나는 반드시 넘겨야 함.
         date 를 넘기면 start_date, end_date 값이 자동으로 생성되며(하루 단위), 넘겨진 start_date, end_date는 overwrite됨.
@@ -699,7 +705,7 @@ class Kiwoom(QAxWidget):
         """
         self.ret_data = []
 
-        if not((bool(start_date) and bool(end_date)) or bool(date)):
+        if not ((bool(start_date) and bool(end_date)) or bool(date)):
             self.logger.error("call this function with (start_date, end_date) or (date) params")
             exit(-1)
 
@@ -804,7 +810,6 @@ class Kiwoom(QAxWidget):
             end_date = self.ret_data[-1]['date'] - relativedelta(months=1)
             time.sleep(0.2)  # delay
         return self.ret_data
-
 
     def job_categ_price(self, market, code, screen_no):
         """
@@ -999,6 +1004,7 @@ class Kiwoom(QAxWidget):
                     args[0].logger.error("account_no is not set.")
             ret = f(*args, **kwargs)
             return ret
+
         return wrapper
 
     @check_acc_no
@@ -1047,7 +1053,8 @@ class Kiwoom(QAxWidget):
         """
         self.tr_controller.prevent_excessive_request()
         ret = self.dynamicCall("SendOrder(QString, QString, QString, int, QString, int, int, QString, QString)",
-                               [rqname, screen_no, acc_no, order_type, code, quantity, price, hoga_gubun, orig_order_no])
+                               [rqname, screen_no, acc_no, order_type, code, quantity, price, hoga_gubun,
+                                orig_order_no])
         return ret
 
     def get_api_module_path(self):
