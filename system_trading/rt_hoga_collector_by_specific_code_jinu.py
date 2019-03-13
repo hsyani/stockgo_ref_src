@@ -62,7 +62,7 @@ class CondiCollector(QMainWindow):
         self.screen_no = 4001
         self.N1, self.N2 = 0, 10
 
-        code = "061970"
+        code = "263690"
         self.rt_hoga_collector(code)
 
         #self.realtime_stream_hoga_from_codelist()
@@ -113,10 +113,20 @@ class CondiCollector(QMainWindow):
             return
 
         self.logger.info("[rt_hoga_collector_callback called]")
-        self.logger.info("data: {}".format(data))
-        self.cc_db[self.db_docname].insert({
-                       'date': curr_time,
-                       'real_data': data})
+
+        try:
+            tablename = data["code"] + data["real_type"]
+            dictdata = {}
+            for fid in constant.RealType.REALTYPE[data["real_type"]]:
+                value = self.kw._get_comm_real_data(data["code"], fid)
+                self.logger.info(constant.RealType.REALTYPE[data["real_type"]][fid] + ": " + value)
+                dictdata[constant.RealType.REALTYPE[data["real_type"]][fid]] = value
+            self.cc_db[tablename].insert({
+                "code": data["code"], "dictdata": dictdata
+            })
+        except:
+            print("error occured while rt_hoga_collector_callback doing")
+
 
     def rt_hoga_collector(self, code):
         screen_no = "6001"
